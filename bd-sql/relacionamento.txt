@@ -1,0 +1,15 @@
+Relacionamento e foreign keys
+
+1 x 1
+Chave estrangeira na tabela mais fraca
+
+1 x N
+Chave estrangeira na cardinalidade N
+
+Inserção em relacionamentos 1 x 1
+Em relacionamentos 1x1 a chave estrangeira não se repete
+O Banco não controla obrigatoriedade, apenas a cardinalidade
+Obrigatoriedade a camada de software controla
+
+Inserção em relacionamentos 1 x N
+Em relacionamentos 1xN a chave estrangeira se repete

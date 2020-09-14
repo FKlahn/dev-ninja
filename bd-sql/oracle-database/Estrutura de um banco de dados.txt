@@ -1,0 +1,224 @@
+ESTRUTURAS LÓGICAS
+DataBlock - espaço físico alocado no HD, por padrão 8KB cada, podendo ser alterado
+Segment - Objetos doBanco de dados
+Extent - dados ocupados pelos segments
+
+Tablespace (lógica ligada aos DataBase Files)
+
+tablespace mkt 1gb xyz.dbf (1gb)
+tabela criada dentro da tablespace
+
+Sempre que uma tabela é criada ela vai para uma tablespace
+se não for específicada qual tablespace, ela vai para uma padrão ex: System
+Não é possível por uma tabela em duas tablespaces, somente tabelas particionadas
+
+create tablespace mkt;
+
+Estruturas físicas de armazenamento;
+Posso ver no meu HD
+
+Datafiles - Estrutura fisica de armazenamento do banco de dados Oracle. Compoem as tablespaces
+e a soma do seus tamanho é o total de tamanho da tablespace
+
+windows = sem poder especificar .dbf
+linux - pode alterar (não recomendado)
+
+são estruturas transparentes, lidamos visualmente com as tabelas sem necessáriamente saber seu
+.dbf físico
+
+podemos especificar uma tablespace que está ligado à um dbf, porém não podemos ligar 
+diretamente o .dbf que queremos
+
+OLF
+OBJETO -> estrutura LOGICA -> estrutura FÍSICA
+
+Datafiles tem diferentes funcoes de acordo com a função da tablespace
+Tablespace permanente
+	Dicionário de dados
+	Metadata
+	Dados de aplicações
+
+tablespace temporária
+	Dados temporários
+	ex: tablespace temporária para ordenaçao de uma query
+
+CONTROLFILE
+	Responsável pelo controle de funcionamento da base de dados Oracle
+	Toda base de dados deve ter pelo menos um controlfile, podendo chegar até oito
+		(Multiplexação)
+	Caso haja mais de um, servirão para redundância, pos as informações serãos as mesmas
+	Fornecem informações para START UP ou para SHUTDOWN
+		informam se esses processos foram executados de maneira correta e síncrona
+	Informam localização dos DATAFILES para que o banco possa ser ABERTO
+	Armazenam informações como nome da database, data e hora de criação, ultimo checkpoint
+A primeira coisa que o Banco de Dados faz quando inicia é ler o CONTROLFILE
+ 
+REDO LOG FILES
+	Log de Transações
+	Armazenam as transações executadas e confirmadas com COMMIT
+	Tem como objetivo permitir a maior recuperação dos dados comitados
+	Quando executamos um commit, os dados permanecem em memória, pois seu acesso é mais
+	rápido do que o acesso ao DISCO.
+	Os dados comitados são gravados também nos REDO LOGS, afim de recuperação em caso
+	de perdas antes da sincronização com os DATAFILES
+	Funcionam de maneira circular, dados sobrescritos em determinado moment
+
+ARCHIVE
+	Usado para evitar perda de dados, colocando o banco de dados em modo ARCHIVE
+	Um arquivo é gerado com a cópia dos REDO a cada mudança de arquivo
+	Não é obrigatório porém é amplamente utilizado em ambientes de produção
+
+Como os arquivos físicos são armazenados?
+	FILE SYSTEM - opção padrão
+		Oracle requisita a gravação de arquivos ao SO, que gerencia através do seu
+		GERENCIADOR DE VOLUMES e grava em seu sistema de arquivos, que por sua vez,
+		avisa ao Oracle da gravação.
+	
+	ASM - Automatic Storage Management - Performance
+		Oracle controla o acesso aos seus arquivos sem passar pelo sistema operacional
+		O SO não conhece os volumes que o Oracle gerencia e nem sabe que existem 
+		arquivos no espaço em disco destinados ao Oracle
+
+Arquivos de Parâmetros
+	Arquivos lidos no momento em que um banco de dados sobe
+		ex: quantidade de memória, parametros de sessão...
+	*Quando o Oracle é iniciado ele reserva automáticamente 40% da memória por padrão
+	
+	São compostos por dois tipos:
+		SPFILE (permanente) - A instância do banco de dados lê esse arquivo no momento de 
+		inicialização. Esse arquivo é binário e deixa os parâmetros persistentes.
+		
+		PFILE (temporario) - É um arquivo idêntico ao SPFILE, porém é um arquivo texto e pode ser
+		editado manualmente pelo usuário
+
+	EX: Prático: Preciso fazer uma manutenção e para isso preciso que o Banco suba com 60%
+	do uso de memória.
+		Posso editar o PFILE colocando as alterações que preciso e mandar o banco 
+		inicializar o PFILE. Na próxima vez que o banco iniciar ele lerá o 
+		SPFILE(Padrão) que não terá armazenado o parâmetro
+	Há 2 tipos de parâmetros: 
+		Estáticos - Necessita reinicialização
+		Dinâmicos - Maioria dos parâmetros
+
+Escopos:
+	Na memória(SCOPE = MEMORY) - altero o parametro em memória e ja vale a partir da 
+	alteração, porém ao Reiniciar o banco o parametro já volta para o default
+	Na reinicialização(SCOPE = SPFILE) - parametros estáticos
+	No mesmo momento e persistente(SCOPE=BOTH(Padrão)) - trabalhar com um parametro dinamico e
+	deixar sem escopo, pois ele tratará como padrão 
+	
+Testando parâmetros
+	O comando ALTER SESSION SET reconfigura um parâmetro apenas para a sessão corrente,
+	ou seja, é ideal para se testar algo como por exemplo performance. AO desligar a 
+	sessão, a alteração é desfeita e não estará disponível para nenhuma outra sessão
+	**Verificando os parâmetros SELECT * FROM V$PARAMETER;
+
+PasswordFile (não obrigatório)- Arquivo de senhas criptografadas para autenticação no banco de dados
+
+Arquivos de backup - Geralmente compostos de DBFs, Controlfiles, archivelogs(redo) e os arquivos
+de inicialização
+
+Arquivos de Log - São os arquivos TRACE, ou .TRC, que servem para monitorar o Banco de Dados
+
+Arquivos de Alerta - Alert Logs, arquivos de alerta automáticos de todas as situações que 
+ocorrem nos Bancos de Dados (1x dia)
+
+DEFAULT TABLESPACES
+	System e Sysaux - Armazena toda a parte CORE do banco, todo o dicionário de dados
+
+	Undo - Trabalha com a integridade do banco de dados, auxiliando na leitura consistente
+	(dados não comitados) também chamada de Talespace de Undo e tablespace de Rollback
+
+	Temp - utilizada para auxiliar a memória do Oracle em operações mais pesadas
+
+ESTRUTURAS DE MEMÓRIA
+	A MEMÓRIA RAM PADRÃO É 40%, dividida em Pools com cada um com suas funções específicas
+	Memória alocada System Global Area:
+		Evita retrabalho dos usuários
+		Dividida e compartilhada por todos os usuários e processos do Oracle
+		Cada instância tem sua SGA
+	
+		Shared Pool - 
+			Análise sintática e Análise Semântica(Parse)
+			Plano de Execução
+
+			Library Cache:
+				SQL, PLSQL, Procedures, Funcions
+
+			Data Dictionary Cache
+				Definições de Dicionário
+ 
+			DataBase Buffer Cache:
+				Valida se a query já foi feita
+					Sim: traz o sql
+					Não: lê os blocos no HD com menos performance
+				Também armazena os dados comitados pelo usuário que serão
+				sincronizados com os arquivos DBFs por um processo
+				
+				Mantém uma lista com os blocos mais utilizados e vai liberando
+				espaço de acordo com os blocos menos utilizados sempre que 
+				necessário para acessar informações novas
+				O tamanho do DDBC corresponde ao tamanho configurado na
+				criação da database (2, 4, 8, 16 e 32k)
+				Após um commit, os blocos do DDBC não são gravados na hora em
+				disco, nesse momento é feito a gravação no REDO LOG e o DDBC
+				mantém ainda os blocos alterados para que esses sejam gravados
+				em conjunto com outros blocos em um momento oportuno.
+			
+		Redolog Buffer:
+				Area de memória correspondente aos REDO LOGS no disco.
+				Assim que uma transação é comitada ela é guardada no REDOLOG
+				BUFFER que escreverá no arquivo de REDO LOG no disco
+		
+		Large Pool -
+			Para objetos grandes não ocuparem a SHARED POOL ex: rotinas de backup
+			perimte paralelismo no Oracle
+
+		JAVA Pool -
+			Armazena códigos JAVA e JVM
+
+		Streams Pool - 
+			Área que armazena o serviço de mensagens para replicação de dados
+
+	Memória dedicada Program Global Area:
+		Cada usuário possui seu espaço ou processo
+		Alocada uma area PGA por sessão
+		Auxilia os usuáriso com cláusulas ORDER BY ou DISTINC, variáveis BIND ou
+		variáveis de SESSÃO
+
+	instância - instalação
+
+EXISTEM 3 FORMAS DE CONFIGURAR AS ÁRES DE PGA E SGA:
+
+	Manual - Parâmetro a parâmetro de cada uma das áreas que compõe as duas
+	áreas de memória
+
+	AMM - Dois parâmetros referentas a SGA e PGA, onde as duas alocam dinamicamente
+	o tamanho das suas áreas internas
+
+	ASMM - Apenas um parâmetro SGA e a PGA onde nenhuma das áreas tem um tamanho
+	fixo assim como as suas áreas internas
+
+PROCESSOS
+
+	PMON - Responsável por monitorar todos os outros processos. Quando um processo termina
+	irregularmente, é o PMON que libera os dados (lock) e recupera esse processo
+
+	SMON - Tarefas diversas, mas como principal, a recuperação automática da instância no STARTUP
+
+	DBWRITERN - Responsável por gravar o conteúdo dos Database Buffer Cache DDBC nos respectivos
+	Datafiles. A gravação ocorre quando o DBBC necessida de espaço, então o DBWRITER grava os 
+	dados que já foram comitados, liberando espaço para novas transações
+
+	LGWR - Fz a ponte entre o REDO LOG BUFFER e os arquivos de REDO LOG FILES. É acionado sempre
+	que o usuário efetua um commit, liberando a entrada do buffer para uma nova transação. A 
+	transação gravada pelo LGWR recebe um numero chamado SCN
+
+	CKPT - Responsável por sinalizar ao DBW o momento da gravação do DBBC nos seus datafiles,
+	ou seja, da memória para o disco.
+
+	MMON - Associado ao AWRiter. Captura as estatísticas do banco.
+
+	MMNL - Grva as estatísticas do banco ASH e parte do AWR em disco.
+
+	RECO - Recupera ou finaliza falhas de transações. Somente bases de dados distribuídas

@@ -1,0 +1,25 @@
+formas normais
+Não modele baseado em procedimentos ou serviços, eles não podem ser controlados
+
+Primeira forma normal
+
+Todo campo vetorizado se tornará outra tabela
+
+Todo campo multivalorado se tornará outra tabela.
+Quando o campo for divisível
+
+Toda tabela necessita de pelo menos um campo que identifique todo o registro como sendo único
+Isso é o que chamamos de chave primária ou primary key.
+
+Chaves naturais e chaves artificiais prefira chaves artificiais
+
+segunda forma normal
+
+terceira forma normal
+
+CARDINALIDADE e OBRIGATORIEDADE
+Obrigatoriedade = primeiro algarismo do par, verdadeiro ou falso 0 ou 1
+Cardinalidade =
+
+
+
