@@ -1,21 +1,15 @@
 package felpa.io.projeto1.entity;
 
 import javax.persistence.*;
-import java.util.Set;
 
 @Entity
-public class User {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     private String name;
-
-    private String email;
-
-    @ManyToMany
-    private Set<Role> roles;
 
     public Long getId() {
         return id;
@@ -31,13 +25,5 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 }
