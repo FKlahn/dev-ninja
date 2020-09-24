@@ -5,6 +5,13 @@ import java.util.Set;
 
 @Entity
 public class User {
+    public User() {
+    }
+
+    public User(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
