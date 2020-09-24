@@ -1,0 +1,42 @@
+Se o seu banco ficou grande demais para uma única máquina ou necessita de alta disponibilidade, chegou a hora de entender um pouco mais sobre os conceitos de replica set e sharding.
+
+	Alta Disponibilidade
+		Essa arquitetura é chamada de replica set (ou conjunto de servidores replicados), onde podemos ter entre 2 e 12 servidores (mas o mínimo sugerido é 3).
+		
+		A cada dois segundos os nós se conversam e verificam se estão ativos. Isso é chamado de Heartbeat
+
+		Se o nó primario cair, um dos nós secundários é eleito para ser o novo nó primário. Novos nós secundáriso podem ser adicionados a qualquer instante, sem interromper o 
+		cluster inteiro.
+
+		Um nó pode estar na mesma máquina que outro nó, desde que em portas distintas. Entretanto, em termos de alta disponibilidade isso não é interes sante, já que uma falha de 
+		hardware poderia comprometer mais de um nó ao mesmo tempo.
+
+		Para informar ao MongoDB que se está usando replicaset, é necessário adicionar ao arquivo de configuração ( mongodb.conf) o parâmetro replSet ou replication.replSetName: 
+		informando o nome do cluster criado.
+	
+
+Testando dois replica sets
+	mongod --port 27017 --replSet rs0
+	mongod --port 27018 --replSet rs0
+
+	rs.initiate()
+	rs.conf()
+	rs.add("cascao:27018")
+
+Sharding - Quebrar uma collection por uma chave
+	
+	Arquitetura de Sharding
+		Shards: são as instâncias do MongoDB que contêm os seus dados particionados. Cada shard pode ser um replica set;
+
+		Config Servers: são os servidores que têm mapeados os metadados de toda a arquitetura;
+
+		Query Routing Instances: essa instância com que sua aplicação irá se comunicar; é ela que direciona as leituras e escritas para os shards (nenhuma aplicação acessa os 
+		shards diretamente).
+
+	Em ambiente de produção, é recomendado:
+
+		 Shards instances: no mínimo dois serviços, e cada shard replicado com replica set;
+
+		Config instances: no mínimo três serviços;
+
+		Query routing instances: no mínimo dois serviços.

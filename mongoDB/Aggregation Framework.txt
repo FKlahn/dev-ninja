@@ -1,0 +1,57 @@
+MAP REDUCE
+	Definimos inicialmente a função de mapeamento da quantidade de ganhadores agrupados pela flag de acumulado S ou N
+	map = function(){emit(this.Acumulado,this.Ganhadores_Sena);}
+
+	Em seguida, definimos a função reduce que será chamada para cada agrupamento, sendo que ela soma a quantidade de ganhadores de Mega-Sena.
+	reduce = function(Acumulado, Ganhadores_Sena) {return Array.sum(Ganhadores_Sena);}
+
+	Finalmente, criaremos a collection ganhadores, em que aplicaremos o map reduce:
+	result = db.runCommand({"mapreduce" : "megasena","map" : map,"reduce" : reduce,"out" : "ganhadores"})
+
+EXPLORANDO O AGGREGATION FRAMEWORK
+	db.collection.aggregate({$group:{_id:null,nomedocampo:{funcaoDeGrupo:"$nomedocampoparaagrupar"}}});
+	
+	ex: Somando os Ganhadores da Mega-Sena
+	db.megasena.aggregate({$group:{_id:null,"soma":{$sum:"$Ganhadores_Sena"}}});
+
+	Comparando com o MySQL:
+	select sum(Ganhadores_Sena) from megasena
+
+	ex: Total de sorteios e a média de ganhadores
+	db.megasena.aggregate({$group:{_id:null,"Total de Sorteios":{$sum:1},"Total de Ganhadores":{$sum:"$Ganhadores_Sena"},"Média Ganhadores":{$avg:"$Ganhadores_Sena"}}});
+	
+	Comparando com o MySQL:
+	select count(Ganhadores_Sena),sum(Ganhadores_Sena),avg(Ganhadores_Sena) from megasena
+
+	--Agrupando por um Campo
+	db.collection.aggregate({$group:{_id:nomedocampo,nomedocampo>{funcaodegrupoi:"$nomedocampoparaagrupar"}}});j
+
+	ex: db.megasena.aggregate({$group:{_id:"$Acumulado","Total Ganhadores Megasena":{$sum:"$Ganhadores_Sena"}}}); --Traz o mesmo resultado que o map reduce anterior
+
+	Comparando com o MySQL:
+	select Ganhadores_Sena,sum(Ganhadores_Sena) from megasena group by Acumulado;
+
+	--Se depois de agrupados os resultados precisarmos fazer um filtro, devemos usar o match:
+	db.collection.aggregate({$group:{_id:nnomedocampo,nomedocampo:{funcaoDeGrupo:"$nomedocampoparaagrupar"}}},{$match:{filtro}});
+	
+	ex: Apenas resultados com no minimo um ganhador
+	db.megasena.aggregate({$group:{_id:"$Acumulado","Total Ganhadores MegaSena":{$sum:"$Ganhadores_Sena"}}},{$match:{"Total Ganhadores MegaSena":{$gt:0}}});
+
+	Comparando com o MySQL:
+	select Acumulado,sum(Ganhadores_Sena) from megasena group by Acumulado having sum(Ganhadores_Sena)>0;
+
+	--Agrupando por mais de um campo e ordenando o resultado
+	db.collection.aggregate({$group:{_id:{apelido1:nomedocampo1,apelido2:nomedocampo2,...},nomedocampo:{funcaodegrupo:"$nomedocampoparaagrupar"}},{$sort:{_id:-1}}});
+
+	ex: Listar quantidade de ganhadores da Mega-Sena agrupados também pela flag de se o prêmio está acumulado; tudo ordenado pela quantidade de ganhadores em ordem decrescente
+	db.megasena.aggregate({$group:{_id:{ganhadores_sena:"$Ganhadores_Sena",acumulado:"$Acumulado"},soma:{$sum:"$Ganhadores_Sena"}}},{$sort:{_id:-1}});
+
+	Comparando com o MySQL:
+	select Ganhadores_Sena,Acumulado,sum(Ganhadores_Sena) from megasena group by Ganhadores_Sena, Acumulado order by Ganhadores_Sena desc;
+
+	-Para efetuarmos agrupamentos de agrupamentos, basta adicionar mais uma chave group ao final.
+	ex: Utilizando o exemplo anterior, vamos agrupar novamente para somar todos os ganhadores da Mega-Sena
+	db.megasena.aggregate({$group:{_id:{ganhadores_sena:"$Ganhadores_Sena",acumulado:"$Acumulado"},soma:{$sum:"$Ganhadores_Sena"}}},{$group:{_id:null,soma_total:{$sum:"$soma"}}});
+
+	Comparando com o MySQL:
+	select sum(soma) soma_total from ( select Ganhadores_Sena, Acumulado, sum(Ganhadores_Sena) soma from megasena group by Ganhadores_Sena, Acumulado)

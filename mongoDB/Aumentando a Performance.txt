@@ -1,0 +1,35 @@
+Criar um Indice
+	db.collection.ensureIndex({campo1:ordem,campo2:ordem,...});
+
+Listar Indices criados
+	db.collection.getIndexes();
+
+Remover Indice Criado
+	db.collection.dropIndex(nomedoindice);
+
+Indice textual
+	db.collection.ensureIndex({<campo>: "text"},{default_language: <idioma>} );
+	*O parametro default_index é opcional, se omitido o indice é criado no idioma inglês
+
+	db.textos.ensureIndex({texto:"text"},{default_language:"portuguese"});
+	db.textos.insert({texto: "Eu gosto de São Paulo"});
+	
+
+	db.textos.find({$text:{$search:"gostar"}});
+	db.textos.find({$text:{$search:"ele gosta"}});
+
+	db.textos.insert({texto: "Eu gosto de São Paulo e Rio Claro"});
+
+	db.textos.find({$text:{$search:"gostar -claro"}});
+	db.textos.find({$text:{$search:"ele gosta -claro"}});
+
+Criar um índice em background
+	No momento em que o índice é criado, as operações de leitura e escrita são bloqueadas até que o índice seja criado completamente.	
+	Para evitar esse bloqueio, é possível criar o índice em background, conforme o exemplo de índice simples:
+
+		db.textos.ensureIndex( { "texto": 1},{background: true} );
+
+	E índice textual:
+		db.textos.ensureIndex( { "$**": "text"},{default_language: "portuguese"} ,{background: true} );
+
+	*A criação de um índice em background demora um pouco mais do que o padrão.

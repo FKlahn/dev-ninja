@@ -1,0 +1,49 @@
+A forma como a aplicação necessita das informações, é essencial para organizar as suas 
+collections, ela é a chave de uma boa performance de seu sistema.
+
+Uma Collection para muitas
+db.livros.insert({
+	_id:"A menina do Vale",
+	autor: "Bel Pesce",
+	tags: ["empreendedorismo","inspiração","virar a mesa" ],
+	comentarios: [
+		{
+			autor: "Amit Garg",
+			texto: "A Menina do Vale tem o poder de energizar qualquer
+			pessoa. É um livro sobre ação e mostra que qualquer
+			pessoa nesse mundo pode realizar os seus sonhos."
+
+		},
+		{
+			autor: "Eduardo Lyra",
+			texto: "Pare tudo e leia A Menina do Vale agora mesmo. Te
+			garanto que você vai aprender demais com essa
+			leitura e vai se surpreender com o quanto é capaz
+		de fazer."
+		}
+	]
+})
+
+Muitas Collections para Muitas
+No MongoDB também é possível representar o relacionamento de muitos para muitos. Vamos 
+exemplificar um cenário em que temos uma loja de livros com várias categorias, e uma 
+categoria tenha vários livros. Inicialmente, cadastramos um livro referenciando 
+três categorias:
+
+db.livros.insert({
+	_id:"A menina do Vale",
+	autor: "Bel Pesce",
+	categorias: ["empreendedorismo","inspiração","virar a mesa"]});
+
+Em seguida, cadastramos uma categoria referenciando dois livros:
+
+db.categorias.insert({nome: "empreendedorismo",
+	lista_de_livros:
+	["A menina do Vale",
+	"28 Mentes Que Mudaram o Mundo"]
+});
+
+Se tudo ficar em uma collection, há a vantagem de termos as informações de maneira mais 
+intuitiva e melhor performance. Entretanto, podemos ter algumas desvantagens, como complicar 
+demais ao fazer uma busca, principalmente para obter resultados parciais. Além disso, cada 
+registro/ documento possui um limite de 16 Mb.

@@ -1,0 +1,117 @@
+Depois de configurar o sistema operacional, o MongoDB assume que “posso usar a máquina à vontade” e assim ele vai consumir bem a parte dememória de disco, o que for ideal para garantir uma
+boa performance de acesso aos dados das collections do banco de dados.
+Como o MongoDB tem esse comportamento, é uma boa prática ter um servidor (ou uma máquina virtual) dedicado a isso.
+
+Se ocorreu um crash no servidor, ou aquela eventual falta de energia, mesmo que o banco de dados suba normalmente, é uma boa prática executar o comando repairDatabase para corrigir algum 
+problema, se existir. É importante saber que, para esse comando ser executado com sucesso, é necessário existir o espaço livre de pelo menos o tamanho do banco de dados atual e mais 2 Gb. 
+Isso acontece porque o comando reescreve todo o banco de dados em novos arquivos, e depois efetua a troca dos antigos pelos novos.
+
+	db.repairDatabase();
+
+Existe também o comando compact com a mesma finalidade que o repairDatabase, mas é executado para cada collection e não para o banco de dados inteiro. Entretanto, depois de executado, ele 
+não libera espaço em disco.
+	
+	db.runCommand ( { compact: '<nome-da-collection>' } )
+
+Autenticação
+	Para adicionar autenticação, usamos o banco de dados admin e adicionamos roles existentes. Em seguida, alteramos o arquivo de configuração do MongoDB e reiniciamos o serviço.
+	use admin
+	db.createUser({user:"nomedousuario",pwd:"senhadousuario",roles:["userAdminAnyDatabase","dbAdminAnyDatabase","readWriteAnyDatabase"]})
+
+	ex:
+	use admin 
+	db.createUser({user: "admin",pwd: "minhasenha",roles:[ "userAdminAnyDatabase","dbAdminAnyDatabase","readWriteAnyDatabase"]})
+
+	Depois, é necessário alterar o arquivo de configuração do MongoDB (normalmente em /etc/mongodb.conf) e adicionar o parâmetro de autenticação, que pode ser security.authorization ou 
+	auth, ambos com o valor true.
+
+Autenticação por banco de dados
+	Como é comum existir uma aplicação que utilize diversas collections, é uma boa abordagem criar um banco de dados por aplicação e criar uma autenticação dentro dele, permitindo ler 
+	e escrever.
+
+		Para cadastrar um usuário administrador no banco de dados:
+		use <meu-banco-de-dados>
+		db.createUser({user: "<nome-do-usuario-admin>",pwd: "<senha-do-usuario-admin>",roles: [{ role: "readWrite", db: "<meu-banco-de-dados>" }]})
+
+	Outra necessidade comum é criar um usuário só de leitura. Nesse caso, a sintaxe é parecida, apenas a role muda:
+		use <meu-banco-de-dados>
+		db.createUser({user: "<nome-do-usuario-de-leitura>",pwd: "<senha-do-usuario-de-leitura>",roles: [{ role: "read", db: "<meu-banco-de-dados>" }]})
+
+Programas externos
+	mongostat - tem o objetivo de informar de maneira geral as operações de consulta, atualização, alocação de memória virtual, operações de rede e conexões existentes.
+	mongotop - que tem o objetivo de informar os processos mais pesados, que estão consumindo mais recurso do banco de dados.
+
+	Se a autenticação for ativada, é preciso conceder ao usuário o privile´gi oda role root para executar esses programas externos, através da seguinte sintaxe:
+	db.grantRolesToUser("usuario",[{role:"root",db:"admin"}]);
+	
+	Em seguida, para iniciar o programa externo, é necessário informar os parâmetros para autenticação:
+	mongotop --authenticationDatabase <banco-de-dados-admin> -u <usuário-administrador> -p <senha-do-administrador>
+	mongotop --authenticationDatabase admin -u admin -p admin
+
+Backup
+	Backup frio - backup de tudo com o banco fora do ar
+	Mongodump e mongoexport
+
+	--mongodump
+	<derruba-serviço-do-MongoDB>
+	mkdir <diretorio-de-backup>
+	cd <diretorio-de-backup>
+	mongodump --dbpath <diretorio-de-dados-do-mongodb> 
+	<sobe-serviço-do-MongoDB>
+
+	--mongoexport mais lenta, mas também interessante, permite exportar os dados em formato CSV ou JSON.
+	A sua sintaxe simplificada é:
+	mongoexport -d <banco-de-dados> -c <collection> --out <arquivo-de-saida>
+
+	Backup quente - backup de tudo com o banco no ar
+
+	service mongod start
+	mkdir <diretorio-de-backup>
+	cd <diretorio-de-backup>
+	mongodump
+
+	Backup de apenas um banco de dados - Informando o parâmetro db, podemos fazer o backup de apenas um banco de dados:
+	mkdir <diretorio-de-backup> 
+	cd <diretorio-de-backup>
+	mongodump --db <nome-do-banco>
+	
+	Backup de apenas uma collection - Informando o parâmetro db e collection, podemos fazer o backup de apenas uma collection:
+	mkdir <diretorio-de-backup>
+	cd <diretorio-de-backup>
+	mongodump --db <nome-do-banco>
+	--collection <nome-da-collection>
+
+Restore
+	Para restaurar os backups feitos com mongodump, utilizamos o mongorestore, que deve ser sempre executado com o banco de dados fora do ar.
+
+	Restore Full - O restore full ou completo é a restauração de todos os bancos de dados do MongoDB e é feita com a seguinte sintaxe:
+	<derruba-serviço-no-MongoDB>
+	cd <diretorio-de-backup>
+	mongorestore --dbpath <diretorio-de-dados-do-mongodb> dump
+
+	Restore parcial - Para restaurar apenas um banco de dados específico, a sintaxe é semelhante:
+	<derruba-serviço-no-MongoDB>
+	cd <diretorio-de-backup>
+	mongorestore --dbpath <diretorio-de-dados-do-mongodb>
+	--db <nome-do-banco>
+	dump/<nome-do-banco>
+	
+	**Se o banco já existir, o MongoDB fará um merge do atual com o dump existente.
+	
+	Para restaurar removendo o banco existente, usamos o parâmetro drop:
+	<derruba-serviço-no-MongoDB>
+	cd <diretorio-de-backup>
+	mongorestore --drop
+	--dbpath <diretorio-de-dados-do-mongodb>
+	--db <nome-do-banco>
+	dump/<nome-do-banco>
+
+Exibir operações rodando
+
+	db.currentOp - exibe as operações em execução no momento:
+
+		db.currentOp();
+
+	db.killOp - Derruba um processo
+
+		db.killOp(123);

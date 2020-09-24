@@ -1,0 +1,137 @@
+show dbs
+use nomedaDatabase
+
+db.nomedaCollection.find()
+db.nomedaCollection.find().pretty()
+db.nomedaCollection.find({"nome":"Felipe"}).pretty() --Case sensitive
+
+Contadores
+db.nomedaCollection.find().count()
+db.nomedaCollection.find({"nome":"Felipe"}).count()
+
+Ordenando
+db.aluno.find().sort({"nome":1}).pretty()
+db.aluno.find().sort({"nome":1})
+db.aluno.find().sort({"nome":-1}).pretty()
+db.aluno.find().sort({"nome":-1})
+	1 = Crescente / 2 = Decrescente
+	
+	Argumento sempre entre chaves
+
+--Gerenciar Usuários
+	db.getUsers() -- Lista os usuários criados
+	db.createUser({user:"fefelip",pwd:"2648",roles:[{role:"readWrite",db:"dbaula4"}]})
+	Roles = Perfis de Acesso
+	db = dbs que o usuário pode acessar
+	db.auth("fefelip","2648") --autenticação, retorna 1 se autenticação for OK, 0 se não for OK
+	db.createUser({user:"felpaula4",pwd:"2648",customData:{db:"dbaula4"},roles:[{role:"readWrite",db:"dbaula4"}]})
+	db.createUser({user:"felpaula3",pwd:"2648",customData:{db:"dbaula3"},roles:[{role:"readWrite",db:"dbaula3"}]})
+
+--Importar dados pelo mongoDB
+	mongoimport -d nomeDaDatabase -c nomedaCollection --type tipoDoArquivo --file localDoArquivo --headerline (Diz que há um header, onde ele será o nome dos atributos da collection)
+	mongoimport -d dbaula5 -c ubs --type csv --file lista.csv --headerline
+
+--limitando registros
+	db.ubs.find().limit(quantidade).pretty()
+	db.ubs.find().limit(!).pretty()
+
+--com alguma condição
+	db.ubs.find({"atributo':"valor"}).pretty()
+	db.ubs.find({"uf":"GO"}).pretty() --todos os dados que possuem UF sendo como goias
+	db.ubs.find({"uf":"GO"}).count() --contando quantos dados possuem UF como goias
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO"}).count() --duas condições
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO"}).pretty()
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO", "cidade":"Aparecida do Rio Doce"}).pretty()
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO", "cidade":"Aparecida do Rio Doce"}).count()
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO", "cidade":/Rio/}).pretty() -- Cidades que contenham Rio
+
+Quando usar um banco SQL e quando usar um banco NoSQL
+MySQL
+	Transactions
+	Table
+	Row
+	Column
+	Secondary Index
+	JOINs
+	GROUP_BY
+
+MongoDB
+	Transactions
+	Collections
+	Document
+	Field
+	Secondary Index
+	Embedded document, $lookup & $graphLookup
+	Aggregation Pipeline
+	
+	
+		MySQL				MongoDB
+		Open Source			Open Source
+		Não tem				Modelo de dados flexível
+		Schema				Schema
+		Não tem				Drivers Nativos
+		Não tem				Escalável
+		Segurança e			Segurança e
+		ferramentas maduras		ferramentas maduras
+		Base de dados como		Base de dados como
+		serviço nas principai		serviço nas principais
+		nuvens				nuvens
+
+	Quando usar o MongoDB?
+		Flexibilidade
+		Não ficar engessado em uma estrutura  de tabela
+		Escalabilidade e velocidade
+
+	Quando usar o MySQL?
+		Transactions
+
+Criando um index para melhorar a pesquisa
+	db.nomeDaCollection.createIndex({"nomedoconjuntode.atributos":prioridade})
+	db.user.createIndex({"roles.functionalities.name":1})
+
+Vendo Indices Criados
+	db.user.getIndexes()
+
+Dropando um indice
+	db.user.dropIndex("roles.functionalities.name":1)
+
+Aggregation e Distinct
+db.order.aggregate({
+	{$match:{status:"A"}} --Selecionando somente os que tem status A
+	{$group : {_id:"$cust_id", total: {$sum:"$amount"}}	 -- agrupando pelo cust_id e fazendo uma soma do amount
+})
+
+db.nomedacollection.distinct("atributo") --Lista os diferentes valores do atributo inserido, sem repetir
+
+Conexão remota com o MongoDB
+
+Replica set - Cluster - Alta Disponibilidade - Backup
+
+Replica set: Grupo de processos do MongoDB. Esse grupo faz com que s dados do seu bacno sejam redundantes e tenham uma alta disponibilidade Clusters
+	Quando você deixa em vários servidores em lugares diferentes com o Replica Set, você sempre terá backups atualizados
+
+Como funciona replica set no MongoDB
+	MongoDB tem redundância de dados
+	Temos o sistema que acessa o banco de dados primário: O primário é o unico banco que é permitido a escrita
+	Se o primário cair, um secundário assume como primário
+
+na prática
+	3 computadores na nuvem
+
+	sudo nano/etc/mongod.conf
+	Alterar o mongod.conf, colocar o nosso ip interno, alterar a porta para a que for ser utilizada, também colocar no parametro replication rplSetName: nomedaReplica
+	salve
+	sudo service mongod restart
+	--Fazer o mesmo nas demais máquinas
+
+	Eleger uma máquina como primária
+	mongo --host ipdamaquina:porta
+	inicializar réplicas
+	rs.initiate()
+	rs.add(ipexterno)
+	rs.add(ipexterno)
+	rs.config()
+	rs.status()
+	
+	Entrar nas maquinas secundarias
+	db.getMongo().setSlaveOk()

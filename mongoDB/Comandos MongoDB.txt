@@ -1,0 +1,182 @@
+show databases ou show dbs --Lista os bancos existentes
+show collections -- Lista as Collections
+help ou db.listCommands() -- Lista os comandos existentes
+db.nomedaCollection.find()
+db.nomedaCollection.findOne() -- apenas o primeiro registro
+db.nomedaCollection.find().pretty()
+db.nomedaCollection.find({"nome":"Felipe"}).pretty() --Case sensitive quase um where
+db.nomedaCollection.find({"nome":"Felipe"},{nomecoluna, 1=aparece, 0=não}).pretty()
+db.nomedaCollection.stats() -- status da collection
+
+Contadores
+db.nomedaCollection.find().count()
+db.nomedaCollection.find({"nome":"Felipe"}).count()
+
+Ordenando
+db.aluno.find().sort({"nome":1}).pretty()
+db.aluno.find().sort({"nome":1})
+db.aluno.find().sort({"nome":-1}).pretty()
+db.aluno.find().sort({"nome":-1})
+
+Maioria dos comandos funciona de forma = db.<nome-da-collection>.<operacao-desejada>;
+
+
+--Gerenciar Usuários
+	db.getUsers() -- Lista os usuários criados
+	db.createUser({user:"fefelip",pwd:"2648",roles:[{role:"readWrite",db:"dbaula4"}]})
+	Roles = Perfis de Acesso
+	db = dbs que o usuário pode acessar
+	db.auth("fefelip","2648") --autenticação, retorna 1 se autenticação for OK, 0 se não for OK ou true/false
+	db.createUser({user:"felpaula4",pwd:"2648",customData:{db:"dbaula4"},roles:[{role:"readWrite",db:"dbaula4"}]})
+	db.createUser({user:"felpaula3",pwd:"2648",customData:{db:"dbaula3"},roles:[{role:"readWrite",db:"dbaula3"}]})
+
+--Importar dados pelo mongoDB
+	mongoimport -d nomeDaDatabase -c nomedaCollection --type tipoDoArquivo --file localDoArquivo --headerline (Diz que há um header, onde ele será o nome dos atributos da collection)
+	mongoimport -d dbaula5 -c ubs --type csv --file lista.csv --headerline
+
+--limitando registros
+	db.ubs.find().limit(quantidade).pretty()
+	db.ubs.find().limit(!).pretty()
+
+--com alguma condição
+	db.ubs.find({"atributo':"valor"}).pretty()
+	db.ubs.find({"uf":"GO"}).pretty() --todos os dados que possuem UF sendo como goias
+	db.ubs.find({"uf":"GO"}).count() --contando quantos dados possuem UF como goias
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO"}).count() --duas condições
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO"}).pretty()
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO", "cidade":"Aparecida do Rio Doce"}).pretty()
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO", "cidade":"Aparecida do Rio Doce"}).count()
+	db.ubs.find({"uf":"GO", "no_bairro":"CENTRO", "cidade":/Rio/}).pretty() -- Cidades que contenham Rio
+
+--Inserindo registros
+	db.nomedacollection.insert(
+		{campo1:valor1.
+		 campo2:valor2
+		...
+		});
+
+db.megasena.insert(
+{
+"Concurso" : 99999,
+"Data Sorteio" : "19/06/2014",
+});
+
+Se inserirmos informando uma collection que não existe o Mongodb automaticamente criará ela
+e inserirá os valores.
+	db.novaCollection.insert({"atributo":valor"});
+
+o mesmo ocorre se precisarmos inserir um novo atributo na collection
+	db.collectionjacriada.insert({"novoatributo":valor"});
+
+MongoDB adapta sua estrutura conforme sua necessidade
+
+--UPDATE
+
+db.nomedacollection.update({criteriodebusca1:valor1},{campoparaatualizar1:novovalor1})
+	Ele encontra pelo critério, porém ele não altera o campo selecionado, mas sim todo o
+	valor do dado para o campoinformado, se a coluna não for especificada, será eliminada
+
+--SET
+	utilizando o $set no update é possivel alterar o campo informado sem apagar as colunas
+	não especificadas, se o valor informado pro campo for o mesmo ele não modifica e se
+	a coluna não existir ele cria no dado e informa o valor
+
+db.nomedacollection.update({criteriodebusca1:valor1},{$set:{campoparaatualizar1:novovalor1}})
+
+--MULTI	
+	Por padrão o update só altera o primeiro registro que encontrar, para alterar todos os
+	registros que atendem a condição é necessário setar o valor multi como verdadeiro
+	
+db.nomedacollection.update({criteriodebusca1:valor1},{$set:{campoparaatualizar1:novovalor1}},{multi:true});
+
+--UPSERT
+	Se o registro existir atualiza, se não ele cadastra
+db.nomedacollection.update({criteriodebusca1:valor1},{$set:{campoparaatualizar1:novovalor1}},{multi:0,upsert:1});
+
+-REMOVE
+	db.nomeDaCollecion.remove({atributo:valorcondicao})
+	--para remover todos os elementos de uma collection basta não por condição dentro do remove
+
+--CRIAR E REMOVER COLLECTIONS
+	Não existe comando para criar uma collection, pois, ao adicionar um registro, automaticamente a collection é criada com a mesma estrutura
+-DROP
+	Utilizado para remover uma collection
+	db.nomeDaCollection.drop();
+
+--ALTERANDO UMA COLUNA DE UMA COLLECTION
+	--Removendo coluna
+		db.collection.update({},{$unset : {campo: 1}},false,true)
+			False avisa que não é um upsert e true é a confirmação para remover em todos os documentos e não apenas no primeiro
+
+	--Alterando o nome
+		db.collection.update({},{$rename:{"nomeColunaAtual":"novonome"}},false,true)
+
+--BUSCAS APRIMORADAS
+	--LIKE
+		db.nomedacollection.find({campo:/textoaserbuscado/})
+		db.nomedacollection.find({campo:{$regex:textoparabuscar}})
+		db.nomedacollection.find({campo:/finaldotexto%/}) -- Busca dados que terminam com o texto inserido
+		db.nomedacollection.find({campo:/^InicioDoTexto/}) -- Busca dados que iniciam com o texto inserido
+			
+	CASE INSENSITIVE
+		db.nomedacollection.find({campo:/textoaserbuscado/i})
+		db.nomedacollection.find({campo:{$regex:textoparabuscar,$options:'i'}})
+
+
+	OPERADORES LÓGICOS
+		OR AND E NOT Funcionam de maneira semelhante
+		db.megasena.find({$or:[{"Ganhadores_Sena":{$eq:5}},{"Ganhadores_Sena":{$eq:7}}]}).count();
+
+	OPERADORES UNÁRIOS
+		Exists	
+		db.collection.find({campo:{$exists:true ou false}})
+
+	SORT
+		db.collection.find().sort({coluna:1 ou -1}) --  1 Para Crescente -1 para decrescente
+	LIMIT -Limita os resultados trazidos da query
+		db.collection.find().limit(quantia)
+		db.collection.find().limit(1)
+
+	SKIP - Diz quantos elementos irémos pular antes de exibir
+		db.collection.find().skip(quantia)
+		db.collection.find().skip(1)
+
+--OPERADORES DE BUSCA
+	$gt Maior 
+	$gte Maior ou igual
+	$lt menor que
+	$lte menor ou igual
+	$ne diferente
+	$in existe em uma lsita
+	$nin não existe em uma lista 
+	$all existe em todos elementos
+	$not traz o oposto da condição
+	$mod calcula o módulo
+	$exists verifica se o campo existe
+	$elemMatch compara elementos de array
+	$size compara tamanho de array
+
+--CAPPED COLLECTION
+	Collection com tamannho predefinidos
+	db.createCollection("collection",{capped:true,size:tamanhoembytes,max:numerodedocumentos})
+	O tamanho deve ser de no mínimo 4096 bytes e podemox limitar o numero de documentos no max(opcional)
+	Ao ser inserido mais que o numero maximo de documento, não dará nenhum erro, o documento mais antigo será substituido
+
+--INCREMENTANDO VALORES
+	db.collection.update({filtroDeBusca},{$inc:{campo:valor}})
+
+--BUSCA GEOESPACIAL
+	Criando um indice no atributo que possui as coordenadas
+	db.collection.ensureIndex({loc:"2d"})
+	
+	Localizar Cidades Próximas
+	db.collection.find({campoComCoordenadas:$near:[coordenada:coordenada],$maxDistance:distancia}})	
+		db.municipios.find({'loc':$near:[-43.2003,-22.9129],$maxDistance:.1}}).pretty()
+		Aumentando a distancia máxima ocorrerão mais resultados
+
+
+--Usuarios
+	db.getUsers() - Lista os usuarios criados
+	db.createUser({user:"felpa",pwd:"123",roles:[{role:"readWrite",db:"dbaula"}]}) cria usuario
+
+	db.auth("usuario","123") retorna se pode ser autenticado ou não
